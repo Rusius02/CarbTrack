@@ -1,5 +1,3 @@
-import { ACTIVITY_CATEGORIES } from "../domain/constants.js";
-
 const CATEGORY_COLORS = Object.freeze({
   Transport: "#7fa27d",
   "Énergie": "#e4a36f",
@@ -40,7 +38,8 @@ export class DashboardView {
       legendList: "#legend-list",
       activityForm: "#activity-form",
       activityDialog: "#activity-dialog",
-      checkoutStatus: "#checkout-status"
+      checkoutStatus: "#checkout-status",
+      appStatus: "#app-status"
     };
   }
 
@@ -81,11 +80,17 @@ export class DashboardView {
   }
 
   showError(message) {
+    this.element("appStatus").textContent = message;
+    this.element("appStatus").hidden = false;
+  }
+
+  showCheckoutMessage(message) {
     this.element("checkoutStatus").textContent = message;
   }
 
   clearError() {
-    this.element("checkoutStatus").textContent = "";
+    this.element("appStatus").textContent = "";
+    this.element("appStatus").hidden = true;
   }
 
   updateProfile(profile) {
@@ -99,6 +104,7 @@ export class DashboardView {
   }
 
   render({ report, workspace, filteredActivities }) {
+    this.clearError();
     const total = report.totalEmissions;
     const [topCategory, topValue] = report.leadingCategory;
     const progress = workspace.goal > 0 ? Math.min(total / workspace.goal * 100, 100) : 0;

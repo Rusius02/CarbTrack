@@ -6,7 +6,7 @@ export class RecordActivity {
     this.createId = createId;
   }
 
-  execute({ workspace, input, year }) {
+  async execute({ workspace, input, year }) {
     const activity = new Activity({
       ...input,
       id: this.createId(),
@@ -21,7 +21,7 @@ export class RecordActivity {
       ...workspace,
       activities: [...workspace.activities, activity]
     };
-    this.saveWorkspace.execute(updatedWorkspace);
+    await this.saveWorkspace.execute(updatedWorkspace);
     return { workspace: updatedWorkspace, activity };
   }
 }

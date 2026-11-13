@@ -20,6 +20,9 @@ export class Activity {
     if (!Number.isFinite(factor) || factor < 0) {
       throw new TypeError("Le facteur d’émission doit être positif ou nul.");
     }
+    if (!Number.isFinite(quantity * factor)) {
+      throw new TypeError("Le résultat du calcul des émissions dépasse la plage numérique.");
+    }
     if (!Number.isInteger(year) || year < 1900) {
       throw new TypeError("L’année de l’activité est invalide.");
     }

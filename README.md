@@ -1,99 +1,76 @@
 # CarbTrack
 
-Application web statique pour estimer et suivre les émissions carbone de particuliers et d’organisations.
-
-## Architecture
-
-Le code est organisé en couches ; les dépendances vont de l’extérieur vers le domaine :
-
-```text
-src/
-├── domain/                 # Entités, règles métier et calculs purs
-├── application/
-│   ├── ports/              # Contrats attendus par les cas d’usage
-│   └── use-cases/          # Opérations applicatives indépendantes du navigateur
-├── infrastructure/
-│   ├── persistence/        # Adaptateur localStorage
-│   └── payments/           # Adaptateur Stripe Payment Links
-├── presentation/           # Vues DOM et contrôleurs de l’interface
-└── main.js                 # Composition root : assemble les dépendances
-tests/
-├── domain/
-├── application/
-└── infrastructure/
-```
-
-### Décisions de conception
-
-- **Responsabilité unique (SRP)** : `Activity` valide une activité ; `AnnualReport` agrège une période ; chaque cas d’usage orchestre une seule opération ; `DashboardView` s’occupe de la présentation DOM.
-- **Ouverture/fermeture (OCP)** : le stockage et le paiement sont des adaptateurs remplaçables ; les cas d’usage ne dépendent pas de `localStorage` ou de Stripe.
-- **Substitution de Liskov (LSP)** : les implémentations du port `StateRepository` peuvent remplacer le stockage local sans changer les cas d’usage.
-- **Ségrégation des interfaces (ISP)** : le port de persistance expose uniquement `load` et `save`.
-- **Inversion des dépendances (DIP)** : l’application dépend des contrats ; `src/main.js` est le seul point qui connaît les implémentations concrètes.
-- **Encapsulation et immutabilité** : les entités valident leur état à la création et exposent un calcul métier dérivé.
-- **Injection des dépendances** : cas d’usage, contrôleurs et adaptateurs reçoivent explicitement leurs dépendances ; les tests peuvent utiliser un dépôt en mémoire.
-
-Le JavaScript natif par modules ES évite d’imposer une chaîne de compilation au prototype. `package.json` fournit uniquement le runner de tests natif Node.
+Application web locale pour estimer les émissions carbone de particuliers et d’organisations. Le navigateur communique avec une API locale Python ; cette API conserve le workspace dans une base SQLite sur la machine.
 
 ## Démarrer
 
-Les modules ES doivent être servis via HTTP (ne pas ouvrir le fichier directement en `file://`). Depuis la racine du projet :
+Prérequis : Python 3.10 ou plus récent (SQLite est inclus avec Python).
 
 ```powershell
-python -m http.server 8000
+python -m backend.run
 ```
 
-Puis ouvrir <http://localhost:8000>. Aucune dépendance applicative n’est requise. Lancer les tests avec :
+Ouvrir ensuite <http://127.0.0.1:8000>. Le serveur écoute uniquement sur l’interface locale par défaut et sert à la fois le site et l’API ; ne pas ouvrir `index.html` directement ni démarrer un serveur statique séparé.
+
+Pour exécuter les tests :
 
 ```powershell
 npm test
+python -m unittest discover -s tests_backend -v
 ```
 
-Les activités et préférences sont stockées dans le `localStorage` du navigateur sous la clé `carbtrack-v1`. Elles ne sont ni synchronisées ni sauvegardées sur un serveur.
+La base est créée automatiquement dans `data/carbtrack.sqlite3` au premier démarrage. `data/` est exclu de Git. Pour choisir un autre emplacement, définir `CARBTRACK_DB_PATH`. Le port peut être remplacé via `CARBTRACK_PORT`. Le serveur reste lié à `127.0.0.1` afin que le stockage carbone demeure accessible uniquement depuis la machine locale.
 
-## Méthode et limites
+**Sauvegarde :** arrêter le serveur et copier le fichier SQLite. Le projet est un prototype mono-workspace, mono-utilisateur, sans authentification ni synchronisation. Ne pas exposer ce serveur sur un réseau partagé ou Internet.
+
+## Architecture
+
+```text
+src/                              # Application navigateur (JavaScript ES modules)
+├── domain/                       # Entités métier et calculs purs
+├── application/
+│   ├── ports/                    # Contrats de persistance
+│   └── use-cases/                # Opérations et politiques applicatives
+├── infrastructure/
+│   ├── persistence/              # Adaptateur HTTP, découplé du stockage serveur
+│   └── payments/                 # Liens de paiement hébergés
+├── presentation/                 # Vues DOM et contrôleurs
+└── main.js                       # Composition root navigateur
+
+backend/
+└── carbtrack/
+    ├── domain/                   # Modèle et validation côté serveur
+    ├── application/              # Service et port de dépôt
+    ├── infrastructure/
+    │   └── persistence/          # Adaptateur SQLite et migrations SQL
+    └── presentation/             # API HTTP et service de fichiers statiques
+```
+
+Les dépendances suivent une architecture ports/adaptateurs : l’application dépend des contrats, et le point de composition assemble les implémentations. L’API valide à nouveau toutes les données avant écriture ; la base impose également des contraintes et enregistre chaque remplacement de workspace dans une transaction. Le dépôt SQLite est remplaçable sans faire dépendre les règles métier du moteur SQL.
+
+La version précédente stockait le workspace dans `localStorage` sous `carbtrack-v1`. Au premier chargement, si la base SQLite est encore vierge, le client migre cette donnée vers l’API ; la clé locale n’est supprimée qu’après confirmation de l’enregistrement. En cas d’échec, les données historiques restent en place et l’erreur est affichée.
+
+## Données et méthode carbone
 
 Le calcul appliqué à chaque activité est :
 
 `émissions (kgCO₂e) = quantité × facteur d’émission (kgCO₂e / unité)`
 
-Le total affiché est une estimation à partir des activités saisies. Les facteurs d’émission de l’exemple sont **fictifs et illustratifs** ; ils ne proviennent pas de la Base Empreinte® et ne doivent pas être utilisés dans un inventaire officiel. Pour un résultat plus fiable, renseigner des facteurs documentés adaptés au pays, à l’année, à la technologie et au périmètre de l’activité. Conserver la référence et les hypothèses associées aux facteurs est recommandé.
+Le total est une estimation à partir des activités saisies. Les facteurs d’émission de l’exemple sont **fictifs et illustratifs** ; ils ne proviennent pas de la Base Empreinte® et ne doivent pas être utilisés dans un inventaire officiel. Pour un bilan plus fiable, renseigner des facteurs documentés adaptés au pays, à l’année, à la technologie et au périmètre de l’activité.
 
-Le GHG Protocol Corporate Standard distingue les émissions directes (scope 1), les émissions indirectes liées à l’énergie achetée (scope 2) et les autres émissions indirectes de la chaîne de valeur (scope 3). Les scopes ne sont demandés que dans le profil organisationnel. Ce prototype ne réalise pas à lui seul un BEGES réglementaire, une vérification indépendante ou un rapport CSRD/ESRS.
+Le GHG Protocol Corporate Standard distingue les émissions directes (scope 1), les émissions indirectes liées à l’énergie achetée (scope 2) et les autres émissions indirectes de la chaîne de valeur (scope 3). Ce prototype ne réalise pas à lui seul un BEGES réglementaire, une vérification indépendante ou un rapport CSRD/ESRS.
 
 ## Références réglementaires et méthodologiques
 
 - [Base Empreinte® de l’ADEME](https://base-empreinte.ademe.fr/) — base publique de facteurs d’émission et de données d’inventaire.
 - [GHG Protocol — Corporate Standard](https://ghgprotocol.org/corporate-standard) — principes de comptabilité des émissions d’organisations ; voir aussi le [Scope 2 Guidance](https://ghgprotocol.org/scope-2-guidance).
 - [Code de l’environnement, article L. 229-25](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000044598109) — référence française relative au bilan d’émissions de gaz à effet de serre (BEGES).
-- [Directive (UE) 2022/2464 (CSRD)](https://eur-lex.europa.eu/eli/dir/2022/2464/oj) — directive sur la publication d’informations en matière de durabilité par les entreprises.
+- [Directive (UE) 2022/2464 (CSRD)](https://eur-lex.europa.eu/eli/dir/2022/2464/oj) — publication d’informations de durabilité par les entreprises.
 - [Règlement délégué (UE) 2023/2772 (ESRS)](https://eur-lex.europa.eu/eli/reg_del/2023/2772/oj) — normes européennes de reporting de durabilité.
 - [Directive (UE) 2025/794](https://eur-lex.europa.eu/eli/dir/2025/794/oj) — modification des dates d’application de certaines obligations CSRD/CSDDD.
 
-La réglementation évolue et son applicabilité dépend du profil et de la situation de l’organisation. Ces liens sont des points de départ, pas une analyse juridique ni une liste exhaustive des textes applicables. Vérifier les versions consolidées, la transposition nationale et les obligations en vigueur avant de déposer un bilan.
+La réglementation évolue et son applicabilité dépend du profil de chaque organisation. Ces références sont des points de départ, pas une analyse juridique ni une liste exhaustive des textes applicables. Vérifier les versions consolidées, la transposition nationale et les obligations en vigueur avant toute déclaration.
 
-## Modèle de rémunération
+## Rémunération
 
-Les offres et tarifs affichés dans cette maquette sont indicatifs. Le checkout n’est pas activé par défaut. Pour vendre des abonnements sans intégrer de secret de paiement au front-end :
-
-1. Créer les produits et prix (abonnement mensuel) dans Stripe.
-2. Créer un Payment Link Stripe hébergé pour chaque offre payante.
-3. Avant de charger `src/main.js`, définir les URLs publiques de ces liens, par exemple dans une balise script :
-
-   ```html
-   <script>
-     window.CARBTRACK_CHECKOUT_URLS = {
-       plus: "https://buy.stripe.com/votre_lien_plus",
-       equipe: "https://buy.stripe.com/votre_lien_equipe"
-     };
-   </script>
-   <script type="module" src="./src/main.js"></script>
-   ```
-
-4. Remplacer les tarifs d’exemple et mettre à jour ce document. Les boutons n’ouvrent que des URLs `https://buy.stripe.com/…` ou `https://checkout.stripe.com/…`.
-
-Cette intégration redirige vers le paiement Stripe, mais n’implémente pas encore la gestion de comptes, l’activation automatique des fonctionnalités, les webhooks, les factures ni le portail client. Pour ces fonctions et la protection des données de compte, ajouter un serveur et valider les événements Stripe côté serveur. Ne jamais intégrer de clé secrète Stripe dans les fichiers du site.
-
-## Données personnelles
-
-Cette maquette ne crée pas de compte et n’envoie pas les activités à un serveur. Les données restent dans le stockage local du navigateur ; les supprimer en effaçant les données de site du navigateur. Les liens externes vers Stripe et les références ne s’ouvrent qu’à la demande de l’utilisateur.
+Les offres et tarifs affichés restent indicatifs. Le checkout n’est pas activé par défaut. Pour commercialiser les abonnements, configurer `window.CARBTRACK_CHECKOUT_URLS` avant le module `src/main.js` avec des Payment Links Stripe hébergés. Le serveur ne reçoit ni ne conserve de données de paiement. La gestion des comptes, des abonnements, des webhooks et des droits d’accès nécessitera une implémentation serveur dédiée ; ne jamais placer une clé secrète Stripe dans le front-end.

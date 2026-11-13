@@ -2,7 +2,6 @@ export class DashboardController {
   constructor({
     view,
     loadWorkspace,
-    saveWorkspace,
     recordActivity,
     removeActivity,
     updatePreferences,
@@ -15,7 +14,6 @@ export class DashboardController {
     Object.assign(this, {
       view,
       loadWorkspace,
-      saveWorkspace,
       recordActivity,
       removeActivity,
       updatePreferences,
@@ -27,11 +25,12 @@ export class DashboardController {
     });
     this.workspace = null;
     this.filter = "all";
+    this.mutationQueue = Promise.resolve();
   }
 
-  start() {
+  async start() {
     try {
-      this.workspace = this.loadWorkspace.execute();
+      this.workspace = await this.loadWorkspace.execute();
     } catch (error) {
       this.view.showError(error.message);
       throw error;
@@ -46,7 +45,7 @@ export class DashboardController {
     const document = this.view.document;
     document.getElementById("workspace-switch").addEventListener("click", () => {
       const profile = this.workspace.profile === "personal" ? "organization" : "personal";
-      this.updateWorkspace({ profile });
+      void this.updateWorkspace({ profile });
     });
     document.getElementById("year-select").addEventListener("change", () => this.render());
     document.getElementById("goal-input").addEventListener("change", (event) => {
@@ -55,11 +54,11 @@ export class DashboardController {
         event.target.value = String(this.workspace.goal);
         return;
       }
-      this.updateWorkspace({ goal });
+      void this.updateWorkspace({ goal });
     });
     document.getElementById("activity-list").addEventListener("click", (event) => {
       const button = event.target.closest("[data-delete]");
-      if (button) this.remove(button.dataset.delete);
+      if (button) void this.remove(button.dataset.delete);
     });
     document.querySelector(".activity-tabs").addEventListener("click", (event) => {
       const tab = event.target.closest("[data-filter]");
@@ -68,7 +67,7 @@ export class DashboardController {
       this.view.setFilterState(this.filter);
       this.render();
     });
-    document.getElementById("example-button").addEventListener("click", () => this.loadDemo());
+    document.getElementById("example-button").addEventListener("click", () => void this.loadDemo());
     document.getElementById("export-button").addEventListener("click", () => this.export());
     document.querySelectorAll(".checkout-button").forEach((button) => {
       button.addEventListener("click", () => this.openCheckout(button.dataset.plan));
@@ -82,35 +81,47 @@ export class DashboardController {
     });
   }
 
-  updateWorkspace(preferences) {
-    try {
-      this.workspace = this.updatePreferences.execute(this.workspace, preferences);
-      this.view.updateProfile(this.workspace.profile);
-      this.view.clearError();
-      this.render();
-    } catch (error) {
-      this.onError(error);
-    }
+  async updateWorkspace(preferences) {
+    return this.enqueueMutation(async () => {
+      try {
+        this.workspace = await this.updatePreferences.execute(this.workspace, preferences);
+        this.view.updateProfile(this.workspace.profile);
+        this.view.clearError();
+        this.render();
+      } catch (error) {
+        this.onError(error);
+      }
+    });
   }
 
-  remove(activityId) {
-    try {
-      this.workspace = this.removeActivity.execute(this.workspace, activityId);
-      this.view.clearError();
-      this.render();
-    } catch (error) {
-      this.onError(error);
-    }
+  async remove(activityId) {
+    return this.enqueueMutation(async () => {
+      try {
+        this.workspace = await this.removeActivity.execute(this.workspace, activityId);
+        this.view.clearError();
+        this.render();
+      } catch (error) {
+        this.onError(error);
+      }
+    });
   }
 
-  loadDemo() {
-    try {
-      this.workspace = this.loadDemoActivities.execute(this.workspace, this.view.getSelectedYear());
-      this.view.clearError();
-      this.render();
-    } catch (error) {
-      this.onError(error);
-    }
+  async loadDemo() {
+    return this.enqueueMutation(async () => {
+      try {
+        this.workspace = await this.loadDemoActivities.execute(this.workspace, this.view.getSelectedYear());
+        this.view.clearError();
+        this.render();
+      } catch (error) {
+        this.onError(error);
+      }
+    });
+  }
+
+  enqueueMutation(operation) {
+    const operationPromise = this.mutationQueue.then(operation);
+    this.mutationQueue = operationPromise.catch(() => {});
+    return operationPromise;
   }
 
   export() {
@@ -134,7 +145,7 @@ export class DashboardController {
   openCheckout(plan) {
     const url = this.checkoutGateway.getCheckoutUrl(plan);
     if (!url) {
-      this.view.showError(
+      this.view.showCheckoutMessage(
         "Paiement non activé : ajoutez votre lien Stripe hébergé dans window.CARBTRACK_CHECKOUT_URLS (voir README)."
       );
       return;

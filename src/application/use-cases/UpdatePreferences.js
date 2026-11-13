@@ -3,9 +3,9 @@ export class UpdatePreferences {
     this.saveWorkspace = saveWorkspace;
   }
 
-  execute(workspace, preferences) {
+  async execute(workspace, preferences) {
     const updatedWorkspace = { ...workspace, ...preferences };
-    this.saveWorkspace.execute(updatedWorkspace);
+    await this.saveWorkspace.execute(updatedWorkspace);
     return updatedWorkspace;
   }
 }

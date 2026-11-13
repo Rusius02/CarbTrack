@@ -1,0 +1,1 @@
+"""CarbTrack backend application."""

@@ -21,23 +21,23 @@ function createMemoryRepository(initial = {}) {
   };
 }
 
-test("LoadWorkspace restaure et valide les entités depuis le port", () => {
+test("LoadWorkspace restaure et valide les entités depuis le port", async () => {
   const activity = new Activity({
     id: "a1", name: "Vol", category: "Transport", quantity: 3,
     unit: "km", factor: 2, year: 2026, scope: "Scope 3"
   });
   const repository = createMemoryRepository({ activities: [activity.toJSON()] });
-  const workspace = new LoadWorkspace(repository).execute();
+  const workspace = await new LoadWorkspace(repository).execute();
   assert.equal(workspace.activities[0] instanceof Activity, true);
   assert.equal(workspace.goal, 2000);
 });
 
-test("RecordActivity valide, ajoute et sauvegarde une activité", () => {
+test("RecordActivity valide, ajoute et sauvegarde une activité", async () => {
   const repository = createMemoryRepository();
   const saveWorkspace = new SaveWorkspace(repository);
-  const workspace = new LoadWorkspace(repository).execute();
+  const workspace = await new LoadWorkspace(repository).execute();
   const useCase = new RecordActivity({ saveWorkspace, createId: () => "activity-2" });
-  const result = useCase.execute({
+  const result = await useCase.execute({
     workspace,
     year: 2026,
     input: {
@@ -50,13 +50,13 @@ test("RecordActivity valide, ajoute et sauvegarde une activité", () => {
   assert.equal(repository.getState().activities.length, 1);
 });
 
-test("RemoveActivity supprime uniquement l’activité ciblée", () => {
+test("RemoveActivity supprime uniquement l’activité ciblée", async () => {
   const repository = createMemoryRepository();
   const saveWorkspace = new SaveWorkspace(repository);
   const activities = ["a1", "a2"].map((id) => new Activity({
     id, name: id, category: "Autre", quantity: 1, unit: "u", factor: 1, year: 2026
   }));
-  const next = new RemoveActivity(saveWorkspace).execute({ profile: "personal", goal: 2, activities }, "a1");
+  const next = await new RemoveActivity(saveWorkspace).execute({ profile: "personal", goal: 2, activities }, "a1");
   assert.deepEqual(next.activities.map((activity) => activity.id), ["a2"]);
 });
 

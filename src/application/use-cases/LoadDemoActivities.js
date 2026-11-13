@@ -7,7 +7,7 @@ export class LoadDemoActivities {
     this.createId = createId;
   }
 
-  execute(workspace, year) {
+  async execute(workspace, year) {
     const activities = DEMO_ACTIVITIES.map((data) => new Activity({
       ...data,
       id: this.createId(),
@@ -18,7 +18,7 @@ export class LoadDemoActivities {
       ...workspace,
       activities: [...workspace.activities, ...activities]
     };
-    this.saveWorkspace.execute(updatedWorkspace);
+    await this.saveWorkspace.execute(updatedWorkspace);
     return updatedWorkspace;
   }
 }
