@@ -12,6 +12,19 @@ python -m backend.run
 
 Ouvrir ensuite <http://127.0.0.1:8000>. Le serveur écoute uniquement sur l’interface locale par défaut et sert à la fois le site et l’API ; ne pas ouvrir `index.html` directement ni démarrer un serveur statique séparé.
 
+## QA statique sur Vercel
+
+La configuration `vercel.json` construit le dernier front-end et publie le contenu de `dist/`. Aucun backend ni fichier SQLite n’est déployé. Ce build QA utilise `localStorage` par navigateur : les activités ne sont pas communes entre les visiteurs, profils ou appareils ; effacer les données du site les supprime. N’y stocker que des données de test.
+
+Vercel peut créer une preview automatiquement après connexion du dépôt GitHub. À défaut, après avoir connecté le compte Vercel et installé leur CLI :
+
+```powershell
+npm run build:qa
+vercel deploy
+```
+
+Le build est également vérifiable sans compte Vercel en lançant `npm run build:qa` puis en servant le dossier `dist/` via HTTP. L’offre Hobby de Vercel est réservée à un usage personnel ou non commercial et ne garantit pas la disponibilité ; vérifier ses [conditions actuelles](https://vercel.com/legal/terms#hobby-plan) avant d’y publier le projet.
+
 Pour exécuter les tests :
 
 ```powershell

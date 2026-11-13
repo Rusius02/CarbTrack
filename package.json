@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "python -m backend.run",
+    "build:qa": "node scripts/build-static-qa.mjs",
     "test": "node --test",
     "test:backend": "python -m unittest discover -s tests_backend -v"
   }
