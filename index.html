@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7f2">
+    <meta name="description" content="CarbTrack aide les particuliers et les entreprises à estimer, comprendre et suivre leurs émissions de gaz à effet de serre.">
+    <title>CarbTrack — Comprendre son empreinte carbone</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#dashboard" aria-label="CarbTrack, accueil">
+          <span class="brand-mark" aria-hidden="true">c</span>
+          <span>carbtrack<span class="brand-period">.</span></span>
+        </a>
+
+        <div class="workspace-label">ESPACE DE TRAVAIL</div>
+        <button class="workspace-switch" id="workspace-switch" type="button" aria-label="Changer le type de profil">
+          <span class="workspace-avatar" id="workspace-avatar">P</span>
+          <span class="workspace-copy"><strong id="workspace-name">Mon espace perso</strong><small id="workspace-type">Particulier</small></span>
+          <span class="switch-chevron" aria-hidden="true">⌄</span>
+        </button>
+
+        <nav class="main-nav" aria-label="Navigation principale">
+          <a class="nav-link active" href="#dashboard"><span aria-hidden="true">▦</span> Vue d’ensemble</a>
+          <a class="nav-link" href="#activities"><span aria-hidden="true">↗</span> Mes activités</a>
+          <a class="nav-link" href="#reports"><span aria-hidden="true">▤</span> Rapports</a>
+          <a class="nav-link" href="#plans"><span aria-hidden="true">✳</span> Offres</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="help-card">
+            <span class="help-icon" aria-hidden="true">?</span>
+            <strong>Un calcul, une question ?</strong>
+            <p>Comprendre la méthode avant d’agir, c’est déjà avancer.</p>
+            <a href="#method">Notre méthode <span aria-hidden="true">→</span></a>
+          </div>
+          <div class="account-row">
+            <div class="account-avatar" aria-hidden="true">A</div>
+            <div><strong>Votre compte</strong><small>Offre gratuite</small></div>
+            <span class="account-menu" aria-hidden="true">···</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content" id="dashboard">
+        <header class="topbar">
+          <div class="breadcrumbs">Espace de travail <span>/</span> <strong>Vue d’ensemble</strong></div>
+          <div class="topbar-actions">
+            <span class="period-label">Période</span>
+            <label class="sr-only" for="year-select">Année de suivi</label>
+            <select id="year-select" class="year-select" aria-label="Année de suivi"></select>
+            <button class="icon-button" id="export-button" type="button" aria-label="Exporter les activités en CSV" title="Exporter en CSV">↓</button>
+            <div class="topbar-avatar" aria-hidden="true">A</div>
+          </div>
+        </header>
+
+        <div class="page-content">
+          <section class="welcome-row">
+            <div>
+              <div class="eyebrow"><span class="live-dot"></span> VOTRE BILAN PERSONNEL</div>
+              <h1>Bonjour, on fait le point ? <span class="wave" aria-hidden="true">✳</span></h1>
+              <p class="welcome-subtitle">Chaque donnée compte. Découvrez ce qui pèse dans votre empreinte et où agir.</p>
+            </div>
+            <button class="button button-dark" id="add-activity-top" type="button"><span aria-hidden="true">＋</span> Ajouter une activité</button>
+          </section>
+
+          <section class="summary-grid" aria-label="Résumé des émissions">
+            <article class="summary-card total-card">
+              <div class="card-label">ÉMISSIONS ESTIMÉES <span class="info-dot" title="Somme des quantités déclarées multipliées par leurs facteurs d’émission.">i</span></div>
+              <div class="total-number"><span id="total-emissions">0</span><span class="unit">kgCO₂e</span></div>
+              <div class="summary-foot"><span class="foot-marker">↗</span><span id="activity-count">Aucune activité</span><span class="muted">sur l’année sélectionnée</span></div>
+            </article>
+            <article class="summary-card">
+              <div class="card-label">VOTRE PRINCIPAL POSTE <span class="info-dot" title="Catégorie ayant les émissions les plus élevées.">i</span></div>
+              <div class="category-highlight"><span class="category-icon transport-icon" aria-hidden="true">↗</span><div><strong id="top-category">À découvrir</strong><small id="top-category-value">Enregistrez une activité</small></div></div>
+              <div class="category-progress"><span id="top-category-progress"></span></div>
+              <div class="summary-foot"><span class="muted">Part du total</span><strong id="top-category-share">—</strong></div>
+            </article>
+            <article class="summary-card goal-card">
+              <div class="card-label">CAP DE PROGRESSION <span class="info-dot" title="Repère visuel de suivi, pas un seuil réglementaire.">i</span></div>
+              <div class="goal-content"><div class="goal-ring" id="goal-ring"><div><strong id="goal-value">0%</strong><small>du repère</small></div></div><div class="goal-copy"><strong>Avancer à son rythme</strong><p>Un repère de suivi personnalisable, pas un objectif officiel.</p></div></div>
+              <div class="goal-control"><label for="goal-input">Repère annuel (kgCO₂e)</label><input id="goal-input" type="number" min="1" step="100" value="2000" aria-label="Repère annuel en kgCO2e"></div>
+            </article>
+          </section>
+
+          <section class="content-grid">
+            <article class="panel activity-panel" id="activities">
+              <div class="panel-heading">
+                <div><span class="section-kicker">SUIVI</span><h2>Vos activités</h2></div>
+                <button class="text-button" id="add-activity-inline" type="button">＋ Ajouter</button>
+              </div>
+              <div class="activity-toolbar">
+                <div class="activity-tabs" role="tablist" aria-label="Filtrer les activités">
+                  <button class="activity-tab selected" type="button" data-filter="all">Tout <span id="all-count">0</span></button>
+                  <button class="activity-tab" type="button" data-filter="Transport">Transport</button>
+                  <button class="activity-tab" type="button" data-filter="Énergie">Énergie</button>
+                  <button class="activity-tab" type="button" data-filter="Alimentation">Alimentation</button>
+                </div>
+                <span class="table-period" id="table-period"></span>
+              </div>
+              <div class="activity-table-wrap">
+                <table class="activity-table">
+                  <thead><tr><th>ACTIVITÉ</th><th>CATÉGORIE</th><th>QUANTITÉ</th><th>ÉMISSIONS</th><th><span class="sr-only">Actions</span></th></tr></thead>
+                  <tbody id="activity-list"></tbody>
+                </table>
+                <div class="empty-state" id="empty-state">
+                  <div class="empty-illustration" aria-hidden="true">↗</div>
+                  <strong>Tout commence par une première donnée</strong>
+                  <p>Ajoutez une activité pour estimer vos émissions. Vous gardez la main sur les facteurs utilisés.</p>
+                  <button class="button button-outline" id="empty-add-button" type="button">＋ Ajouter une activité</button>
+                  <button class="example-link" id="example-button" type="button">Ou voir un exemple de démonstration</button>
+                </div>
+              </div>
+              <div class="table-footer"><span id="showing-count">0 activité</span><a href="#method">Comment les émissions sont-elles calculées ? <span aria-hidden="true">→</span></a></div>
+            </article>
+
+            <article class="panel breakdown-panel">
+              <div class="panel-heading">
+                <div><span class="section-kicker">RÉPARTITION</span><h2>Où agir en premier ?</h2></div>
+                <button class="more-button" type="button" aria-label="Informations sur la répartition" title="Répartition par catégorie">···</button>
+              </div>
+              <p class="panel-subtitle">Émissions estimées par catégorie</p>
+              <div class="breakdown-chart" id="breakdown-chart" role="img" aria-label="Graphique de répartition par catégorie">
+                <div class="chart-center"><strong id="chart-total">0</strong><span>kgCO₂e</span></div>
+              </div>
+              <div class="legend-list" id="legend-list"></div>
+              <div class="chart-note"><span class="note-icon" aria-hidden="true">i</span> Estimation fondée sur vos saisies et les facteurs indiqués.</div>
+            </article>
+          </section>
+
+          <section class="insight-banner" id="reports">
+            <div class="insight-ornament" aria-hidden="true"><span></span><span></span><span></span></div>
+            <div class="insight-copy"><span class="section-kicker">LE PETIT PAS DU MOIS</span><h2>Mesurer, c’est déjà mieux choisir.</h2><p>Complétez vos activités principales et comparez des périodes cohérentes pour suivre votre évolution.</p></div>
+            <a href="#method" class="insight-link">Découvrir la méthode <span aria-hidden="true">↗</span></a>
+          </section>
+
+          <section class="lower-grid" id="method">
+            <article class="panel method-panel">
+              <div class="panel-heading"><div><span class="section-kicker">TRANSPARENCE</span><h2>Comment calcule-t-on ?</h2></div><span class="method-badge">À connaître</span></div>
+              <p>Le principe est simple : <strong>activité × facteur d’émission = émissions estimées</strong>. Le résultat est exprimé en kilogrammes d’équivalent CO₂ (kgCO₂e).</p>
+              <div class="method-example"><span class="equation-icon" aria-hidden="true">ƒx</span><span>Exemple : <strong>km parcourus × kgCO₂e/km</strong></span></div>
+              <ul class="method-points"><li>Les facteurs varient selon le lieu, l’année, la technologie et le périmètre.</li><li>Les valeurs de démonstration ne sont pas des facteurs officiels.</li><li>Pour un bilan vérifiable, documentez les sources et les incertitudes de chaque facteur.</li></ul>
+              <a class="text-link" href="https://base-empreinte.ademe.fr/" target="_blank" rel="noopener noreferrer">Consulter la Base Empreinte® ADEME <span aria-hidden="true">↗</span></a>
+            </article>
+            <article class="panel regulation-panel">
+              <div class="panel-heading"><div><span class="section-kicker">REPÈRES FRANCE & UE</span><h2>Textes de référence</h2></div><span class="regulation-icon" aria-hidden="true">§</span></div>
+              <div class="law-list">
+                <a class="law-item" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000044598109" target="_blank" rel="noopener noreferrer"><span class="law-tag">FR</span><span><strong>Code de l’environnement — art. L. 229-25</strong><small>Bilan des émissions de gaz à effet de serre (BEGES).</small></span><span class="external-arrow" aria-hidden="true">↗</span></a>
+                <a class="law-item" href="https://eur-lex.europa.eu/eli/dir/2022/2464/oj" target="_blank" rel="noopener noreferrer"><span class="law-tag eu-tag">UE</span><span><strong>Directive (UE) 2022/2464 — CSRD</strong><small>Publication d’informations de durabilité par les entreprises.</small></span><span class="external-arrow" aria-hidden="true">↗</span></a>
+                <a class="law-item" href="https://eur-lex.europa.eu/eli/reg_del/2023/2772/oj" target="_blank" rel="noopener noreferrer"><span class="law-tag eu-tag">UE</span><span><strong>Règlement délégué (UE) 2023/2772 — ESRS</strong><small>Normes européennes de reporting de durabilité.</small></span><span class="external-arrow" aria-hidden="true">↗</span></a>
+                <a class="law-item" href="https://eur-lex.europa.eu/eli/dir/2025/794/oj" target="_blank" rel="noopener noreferrer"><span class="law-tag eu-tag">UE</span><span><strong>Directive (UE) 2025/794</strong><small>Modifie le calendrier d’application de certaines obligations CSRD/CSDDD.</small></span><span class="external-arrow" aria-hidden="true">↗</span></a>
+              </div>
+              <p class="legal-disclaimer">Les obligations dépendent de la situation de chaque organisation et évoluent. CarbTrack est un outil d’estimation, pas un conseil juridique ni un bilan réglementaire certifié. Vérifiez les textes en vigueur et leur transposition avant toute déclaration.</p>
+              <a class="text-link" href="https://ghgprotocol.org/corporate-standard" target="_blank" rel="noopener noreferrer">Référentiel GHG Protocol — Corporate Standard <span aria-hidden="true">↗</span></a>
+            </article>
+          </section>
+
+          <section class="plans-section" id="plans">
+            <div class="plans-heading"><div><span class="section-kicker">GRANDIR AVEC VOUS</span><h2>Un modèle simple, sans surprise.</h2><p>Commencez gratuitement. Passez à la suite quand vous en avez besoin.</p></div><span class="plans-trust">Paiement sécurisé via Stripe <span aria-hidden="true">↗</span></span></div>
+            <div class="plans-grid">
+              <article class="plan-card"><span class="plan-name">Découverte</span><div class="plan-price">0 € <span>/ toujours</span></div><p>Pour comprendre son empreinte et démarrer.</p><ul><li>Suivi des activités</li><li>Calcul et export CSV</li><li>Facteurs personnalisables</li></ul><a href="#activities" class="button button-outline plan-action">Votre offre actuelle</a></article>
+              <article class="plan-card featured-plan"><span class="popular-label">POUR ALLER PLUS LOIN</span><span class="plan-name">Plus</span><div class="plan-price">7 € <span>/ mois</span></div><p>Un suivi plus régulier, à votre rythme.</p><ul><li>Tout ce qui est inclus dans Découverte</li><li>Historique et rapports PDF</li><li>Objectifs et rappels</li></ul><button class="button button-dark plan-action checkout-button" type="button" data-plan="plus">Choisir Plus <span aria-hidden="true">→</span></button></article>
+              <article class="plan-card"><span class="plan-name">Équipe</span><div class="plan-price">29 € <span>/ mois</span></div><p>Pour structurer le suivi de votre organisation.</p><ul><li>Suivi multi-postes et multi-sites</li><li>Exports pour préparer un bilan</li><li>Accès équipe (jusqu’à 5 membres)</li></ul><button class="button button-outline plan-action checkout-button" type="button" data-plan="equipe">Choisir Équipe <span aria-hidden="true">→</span></button></article>
+            </div>
+            <p class="checkout-status" id="checkout-status" role="status" aria-live="polite"></p>
+            <p class="pricing-disclaimer">Tarifs indicatifs TTC à configurer avant commercialisation. Le paiement sera traité sur une page Stripe hébergée après configuration du lien correspondant. Aucun paiement n’est activé dans cette version.</p>
+          </section>
+          <footer class="page-footer"><a class="footer-brand" href="#dashboard">carbtrack<span>.</span></a><span>Des estimations transparentes pour des choix plus éclairés.</span><a href="#method">Méthode & références</a></footer>
+        </div>
+      </main>
+    </div>
+
+    <dialog class="activity-dialog" id="activity-dialog" aria-labelledby="dialog-title">
+      <form method="dialog" class="dialog-close-form"><button class="dialog-close" aria-label="Fermer">×</button></form>
+      <span class="section-kicker">NOUVELLE SAISIE</span>
+      <h2 id="dialog-title">Ajouter une activité</h2>
+      <p class="dialog-intro">Saisissez une quantité et son facteur d’émission. Vos données restent dans ce navigateur.</p>
+      <form id="activity-form">
+        <label for="activity-name">Description</label><input id="activity-name" name="name" type="text" placeholder="Ex. Trajet domicile-travail" required maxlength="80">
+        <div class="form-two-col"><div><label for="activity-category">Catégorie</label><select id="activity-category" name="category"><option>Transport</option><option>Énergie</option><option>Alimentation</option><option>Achats</option><option>Numérique</option><option>Autre</option></select></div><div id="scope-field"><label for="activity-scope">Périmètre GHG</label><select id="activity-scope" name="scope"><option value="Scope 1">Scope 1</option><option value="Scope 2">Scope 2</option><option value="Scope 3" selected>Scope 3</option></select></div></div>
+        <div class="form-two-col"><div><label for="activity-quantity">Quantité</label><input id="activity-quantity" name="quantity" type="number" min="0.001" step="any" placeholder="Ex. 250" required></div><div><label for="activity-unit">Unité</label><input id="activity-unit" name="unit" type="text" placeholder="km, kWh, repas..." required maxlength="20"></div></div>
+        <label for="activity-factor">Facteur d’émission <span>(kgCO₂e par unité)</span></label><input id="activity-factor" name="factor" type="number" min="0" step="any" placeholder="Renseignez le facteur de votre source" required>
+        <div class="factor-hint"><span aria-hidden="true">i</span> Choisissez un facteur correspondant au pays, à l’année et au périmètre de votre activité. <a href="https://base-empreinte.ademe.fr/" target="_blank" rel="noopener noreferrer">Base Empreinte®</a></div>
+        <div class="dialog-actions"><button class="button button-outline" type="button" id="cancel-dialog">Annuler</button><button class="button button-dark" type="submit">Enregistrer l’activité</button></div>
+      </form>
+    </dialog>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
